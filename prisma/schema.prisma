@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum LifeStatus {
+  ALIVE
+  DECEASED
+}
+
+enum RelationType {
+  PARENT_CHILD
+  SPOUSE
+}
+
+enum DocumentType {
+  BIRTH_CERTIFICATE
+  MARRIAGE_CERTIFICATE
+  DEATH_CERTIFICATE
+  IDENTITY_CARD
+  PHOTO
+  LETTER
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("member")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Person {
+  id         String      @id @default(cuid())
+  firstName  String
+  lastName   String?
+  gender     Gender
+  status     LifeStatus  @default(ALIVE)
+  birthDate  DateTime?
+  deathDate  DateTime?
+  birthPlace String?
+  occupation String?
+  bio        String?
+  photoUrl   String?
+  email      String?
+  phone      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  relationsFrom Relationship[] @relation("RelationFrom")
+  relationsTo   Relationship[] @relation("RelationTo")
+  documents      Document[]
+}
+
+model Relationship {
+  id     String       @id @default(cuid())
+  type   RelationType
+  fromId String
+  toId   String
+  note   String?
+
+  from Person @relation("RelationFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to   Person @relation("RelationTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([type, fromId, toId])
+  @@index([type])
+}
+
+model Document {
+  id          String       @id @default(cuid())
+  title       String
+  type        DocumentType
+  personId    String?
+  issuedDate  DateTime?
+  issuedBy    String?
+  documentId  String?
+  notes       String?
+  fileUrl     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  person Person? @relation(fields: [personId], references: [id], onDelete: SetNull)
+}
